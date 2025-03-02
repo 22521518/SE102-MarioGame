@@ -1,4 +1,4 @@
-/* =============================================================
+	/* =============================================================
 	INTRODUCTION TO GAME PROGRAMMING SE102
 	
 	SAMPLE 01 - SKELETON CODE 
@@ -21,6 +21,8 @@
 #include "debug.h"
 #include "Game.h"
 #include "GameObject.h"
+#include "Ship.h"
+#include "MyShip.h"
 
 #define WINDOW_CLASS_NAME L"Game Window"
 #define MAIN_WINDOW_TITLE L"01 - Skeleton"
@@ -28,6 +30,9 @@
 
 #define TEXTURE_PATH_BRICK L"brick.png"
 #define TEXTURE_PATH_MARIO L"mario.png"
+
+#define TEXTURE_PATH_MYSHIP L"ship.png"
+#define TEXTURE_PATH_SHIP L"enemy_ship.png"
 
 #define TEXTURE_PATH_MISC L"misc.png"
 
@@ -46,7 +51,7 @@ CMario *mario;
 
 
 CBrick *brick;
-vector<LPGAMEOBJECT> brickList;
+vector<LPGAMEOBJECT> objects;
 
 #define BRICK_X 10.0f
 #define BRICK_Y 120.0f
@@ -57,11 +62,29 @@ LPTEXTURE texMario = NULL;
 LPTEXTURE texBrick = NULL;
 LPTEXTURE texMisc = NULL;
 
-//vector<LPGAMEOBJECT> objects;  
+
+CShip* ship;
+CMyShip* myShip;
+
+#define SHIP_START_X SCREEN_WIDTH / 2
+#define SHIP_START_Y SCREEN_HEIGHT - 100
+
+LPTEXTURE texShip = NULL;
+LPTEXTURE texMyShip = NULL;
+
+// Global key state
+bool keys[256] = { false };
 
 LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
+	case WM_KEYDOWN:  // Key pressed
+		keys[wParam] = true;
+		break;
+
+	case WM_KEYUP:  // Key released
+		keys[wParam] = false;
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -75,36 +98,30 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 /*
 	Load all game resources. In this example, create a brick object and mario object
 */
+
+float getRandomFloat(float min, float max) {
+	static std::random_device rd;  // Random seed
+	static std::mt19937 gen(rd()); // Mersenne Twister engine
+	std::uniform_real_distribution<float> dist(min, max); // Range
+
+	return dist(gen);
+}
+
 void LoadResources()
 {
 	CGame * game = CGame::GetInstance();
-	texBrick = game->LoadTexture(TEXTURE_PATH_BRICK);
-	texMario = game->LoadTexture(TEXTURE_PATH_MARIO);
-	texMisc = game->LoadTexture(TEXTURE_PATH_MISC);
+	texShip = game->LoadTexture(TEXTURE_PATH_SHIP);
+	texMyShip = game->LoadTexture(TEXTURE_PATH_MYSHIP);
 
-	// Load a sprite sheet as a texture to try drawing a portion of a texture. See function Render 
-	//texMisc = game->LoadTexture(MISC_TEXTURE_PATH);
-
-	mario = new CMario(MARIO_START_X, MARIO_START_Y, MARIO_START_VX, MARIO_START_VY, texMario);
-	brick = new CBrick(BRICK_X, BRICK_Y, texBrick);
-
-
-	for (int i = 0; i < SCREEN_WIDTH / texBrick->getWidth(); i++)
+	//mario = new CMario(MARIO_START_X, MARIO_START_Y, MARIO_START_VX, MARIO_START_VY, texMario);
+	myShip = new CMyShip(100, 100 , 0.1f, 0.1f, texMyShip);
+	objects.push_back(myShip);
+	for (int i = 0; i < 3; i++)
 	{
-		brickList.push_back(new CBrick(BRICK_X + i * texBrick->getWidth(), BRICK_Y, texBrick));
+
+		objects.push_back(new CShip(getRandomFloat(0, SCREEN_WIDTH), texShip->getHeight() / 2, 0.0f, 0.1f, texShip));
 	}
 
-	
-	// objects.push_back(mario);
-	// for(i)		 
-	//		objects.push_back(new CGameObject(BRICK_X+i*BRICK_WIDTH,....);
-	//
-
-	//
-	// int x = BRICK_X;
-	// for(i)
-	//		... new CGameObject(x,.... 
-	//		x+=BRICK_WIDTH;
 }
 
 /*
@@ -118,14 +135,12 @@ void Update(DWORD dt)
 		objects[i]->Update(dt);
 	*/
 
-	mario->Update(dt);
-	//brick->Update(dt);
-	for (int i = 0; i < brickList.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 	{
-		(brickList[i])->Update(dt);
+		(objects[i])->Update(dt);
 	}
 
-	//DebugOutTitle(L"01 - Skeleton %0.1f, %0.1f", mario->GetX(), mario->GetY());
+	DebugOutTitle(L"01 - Skeleton %0.1f, %0.1f", myShip->GetX(), myShip->GetY());
 }
 
 /*
@@ -151,11 +166,9 @@ void Render()
 		FLOAT NewBlendFactor[4] = { 0,0,0,0 };
 		pD3DDevice->OMSetBlendState(g->GetAlphaBlending(), NewBlendFactor, 0xffffffff);
 
-		mario->Render();
-		//brick->Render();
-		for (int i = 0; i < brickList.size(); i++)
+		for (int i = 0; i < objects.size(); i++)
 		{
-			(brickList[i])->Render();
+			(objects[i])->Render();
 		}
 
 		// Uncomment this line to see how to draw a porttion of a texture  
