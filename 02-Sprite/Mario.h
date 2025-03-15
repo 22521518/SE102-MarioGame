@@ -18,10 +18,23 @@ class CMario : public CGameObject
 {
 protected:
 	float vx;
+	float current_vx;
 public:
 	CMario(float x, float y, float vx);
+	float GetVx() { return vx; }	
+	void UpdateVecolity();
 	void Update(DWORD dt);
 	void Render();
 };
 
+
+class CCappa : public CGameObject
+{
+protected:
+	float vx;
+public:
+	CCappa(float x, float y, float vx);
+	void Update(DWORD dt);
+	void Render();
+};
 

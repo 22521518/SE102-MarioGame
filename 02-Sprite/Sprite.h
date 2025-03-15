@@ -17,8 +17,8 @@ class CSprite
 	D3DXMATRIX matScaling;
 public:
 	CSprite(int id, int left, int top, int right, int bottom, LPTEXTURE tex);
-
 	void Draw(float x, float y);
+	LPTEXTURE GetTexture() { return texture; };
 };
 
 typedef CSprite* LPSPRITE;

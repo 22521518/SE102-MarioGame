@@ -39,9 +39,11 @@
 #define ID_TEX_MARIO 0
 #define ID_TEX_ENEMY 10
 #define ID_TEX_MISC 20
+#define ID_TEX_CAPPA 30
+#define ID_TEX_DOOR 40
 
 #define TEXTURES_DIR L"textures"
-#define TEXTURE_PATH_MARIO TEXTURES_DIR "\\mario.png"
+#define TEXTURE_PATH_MARIO TEXTURES_DIR "\\mario_transparent.png"
 #define TEXTURE_PATH_MISC TEXTURES_DIR "\\misc_transparent.png"
 #define TEXTURE_PATH_ENEMIES TEXTURES_DIR "\\enemies.png"
 
@@ -49,6 +51,11 @@ CMario *mario;
 #define MARIO_START_X 10.0f
 #define MARIO_START_Y 130.0f
 #define MARIO_START_VX 0.1f
+
+CCappa* cappa;
+#define CAPPA_START_X 10.0f
+#define CAPPA_START_Y 80.0f
+#define CAPPA_START_VX 0.1f
 
 CBrick *brick;
 
@@ -69,21 +76,66 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	Load all game resources 
 	In this example: load textures, sprites, animations and mario object
 */
+
+bool Collision(CGameObject* src, CGameObject* dest)
+{
+	float srcXMin = src->GetX();
+	float srcXMax = src->GetX();
+	float srcYMin = src->GetY();
+	float srcYMax = src->GetX();
+
+	float destXMin = dest->GetX();
+	float destXMax = dest->GetX();
+	float destYMin = dest->GetY();
+	float destYMax = dest->GetX();
+
+	return srcXMin < destXMax && srcXMax > srcXMin &&
+		srcYMin < destYMax && srcYMax > srcYMin;
+}
+
+void LoadDoor()
+{
+	CTextures* textures = CTextures::GetInstance();
+	CSprites* sprites = CSprites::GetInstance();
+	CAnimations* animations = CAnimations::GetInstance();
+	
+	textures->Add(ID_TEX_DOOR, TEXTURE_PATH_ENEMIES);
+	float height = 16, width = 16, gap = 2;
+	sprites->Add(70001, 282, 99, 0, 0, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70002, 282, 99 + (height + gap) * 1, 298, 115 + (height + gap) * 1, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70003, 282, 99 + (height + gap) * 2, 298, 115 + (height + gap) * 2, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70004, 282, 99 + (height + gap) * 3, 298, 115 + (height + gap) * 3, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70005, 282, 99 + (height + gap) * 4, 298, 115 + (height + gap) * 4, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70006, 282, 99 + (height + gap) * 5, 298, 115 + (height + gap) * 5, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70007, 282, 99 + (height + gap) * 6, 298, 115 + (height + gap) * 6, textures->Get(ID_TEX_DOOR));
+	sprites->Add(70008, 282, 99 + (height + gap) * 7, 298, 115 + (height + gap) * 7, textures->Get(ID_TEX_DOOR));
+
+	LPANIMATION ani = new CAnimation(100);
+	ani->Add({ 70001 , 7002});
+	ani->Add({ 70003 , 7004});
+	ani->Add({ 70005 , 7006});
+	ani->Add({ 70007 , 7008});
+	animations->Add(700, ani);
+}
+
 void LoadResources()
 {
+	LoadDoor();
 	CTextures * textures = CTextures::GetInstance();
 
 	textures->Add(ID_TEX_MARIO, TEXTURE_PATH_MARIO);
 	//textures->Add(ID_ENEMY_TEXTURE, TEXTURE_PATH_ENEMIES, D3DCOLOR_XRGB(156, 219, 239));
 	textures->Add(ID_TEX_MISC, TEXTURE_PATH_MISC);
+	textures->Add(ID_TEX_CAPPA, TEXTURE_PATH_ENEMIES);
 
 
 	CSprites * sprites = CSprites::GetInstance();
 	
 	LPTEXTURE texMario = textures->Get(ID_TEX_MARIO);
+	LPTEXTURE texCappa = textures->Get(ID_TEX_CAPPA);
 
 	// readline => id, left, top, right 
-
+	// Mario
 	sprites->Add(10001, 246, 154, 259, 181, texMario);
 	sprites->Add(10002, 275, 154, 290, 181, texMario);
 	sprites->Add(10003, 304, 154, 321, 181, texMario);
@@ -92,26 +144,64 @@ void LoadResources()
 	sprites->Add(10012, 155, 154, 171, 181, texMario);
 	sprites->Add(10013, 125, 154, 141, 181, texMario);
 
+	// Cappa
+	// Left
+	sprites->Add(20001, 6, 130, 21, 156, texCappa);
+	sprites->Add(20002, 29, 130, 43, 156, texCappa);
+	//Right
+	sprites->Add(20011, 960 - 6 - 15, 130, 960 - 21 + 15, 156, texCappa);
+	sprites->Add(20012, 960 - 29 - 16, 130, 960 - 43 + 15, 156, texCappa);
+
 	CAnimations * animations = CAnimations::GetInstance();
 	LPANIMATION ani;
 
+	// Mario
+	//Right
 	ani = new CAnimation(100);
 	ani->Add(10001);
 	ani->Add(10002);
 	ani->Add(10003);
 	animations->Add(500, ani);
 
+	ani = new CAnimation(100);
+	ani->Add(10001);
+	animations->Add(502, ani);
 
-
+	//Left
 	ani = new CAnimation(100);
 	ani->Add(10011);
 	ani->Add(10012);
 	ani->Add(10013);
 	animations->Add(501, ani);
 
+	ani = new CAnimation(100);
+	ani->Add(10011);
+	animations->Add(503, ani);
 
+	// cappa
+	ani = new CAnimation(100);
+	ani->Add(20011);
+	ani->Add(20012);
+	animations->Add(600, ani);
+
+	ani = new CAnimation(100);
+	ani->Add(20001);
+	ani->Add(20002);
+	animations->Add(601, ani);
 
 	LPTEXTURE texMisc = textures->Get(ID_TEX_MISC);
+
+	int spriteHeight = 317 - 300;
+	int gap = 2;
+	int dis = spriteHeight + 2;
+	
+	//// gach
+	//sprites->Add(20001 + dis, 300, 117 + dis, 317, 133 + dis, texMisc);
+	//sprites->Add(20002 + dis, 318, 117 + dis, 335, 133 + dis, texMisc);
+	//sprites->Add(20003 + dis, 336, 117 + dis, 353, 133 + dis, texMisc);
+	//sprites->Add(20004 + dis, 354, 117 + dis, 371, 133 + dis, texMisc);
+
+	// gach?
 	sprites->Add(20001, 300, 117, 317, 133, texMisc);
 	sprites->Add(20002, 318, 117, 335, 133, texMisc);
 	sprites->Add(20003, 336, 117, 353, 133, texMisc);
@@ -124,9 +214,19 @@ void LoadResources()
 	ani->Add(20004);
 	animations->Add(510, ani);
 	
+/*	ani = new CAnimation(100);
+	ani->Add(20001 + dis, 1000);
+	ani->Add(20002 + dis);
+	ani->Add(20003 + dis);
+	ani->Add(20004 + dis);
+	animations->Add(510 + dis, ani)*/;
+
+	
 	
 	mario = new CMario(MARIO_START_X, MARIO_START_Y, MARIO_START_VX);
+	cappa = new CCappa(CAPPA_START_X, CAPPA_START_Y, CAPPA_START_VX);
 	brick = new CBrick(100.0f, 100.0f);
+
 }
 
 /*
@@ -136,6 +236,8 @@ void LoadResources()
 void Update(DWORD dt)
 {
 	mario->Update(dt);
+	if (cappa)
+	cappa->Update(dt);
 }
 
 void Render()
@@ -160,6 +262,8 @@ void Render()
 
 		brick->Render();
 		mario->Render();
+		if (cappa)
+		cappa->Render();
 
 		// Uncomment this line to see how to draw a porttion of a texture  
 		//g->Draw(10, 10, texMisc, 300, 117, 316, 133);

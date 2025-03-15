@@ -142,6 +142,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyShip.cpp" />
     <ClCompile Include="Ship.cpp" />
+    <ClCompile Include="Tank.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bullet.h" />
@@ -150,6 +151,9 @@
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="MyShip.h" />
     <ClInclude Include="Ship.h" />
+    <ClInclude Include="GameObjectMovable.h" />
+    <ClInclude Include="Tank.h" />
+    <ClInclude Include="TankBullet.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

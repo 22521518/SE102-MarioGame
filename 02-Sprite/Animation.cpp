@@ -10,6 +10,18 @@ void CAnimation::Add(int spriteId, DWORD time)
 	frames.push_back(frame);
 }
 
+void CAnimation::Add(vector<int> spriteId, DWORD time) 
+{
+	vector<LPSPRITE> sprites;
+	for (int i = 0; i < spriteId.size(); i++)
+	{
+		sprites.push_back(CSprites::GetInstance()->Get(spriteId[i]));
+	}
+	int t = time;
+	if (time == 0) t = this->defaultTime;
+	LPANIMATION_FRAME frame = new CAnimationFrame(sprites, t);
+	frames.push_back(frame);
+}
 void CAnimation::Render(float x, float y)
 {
 	ULONGLONG now = GetTickCount64();
@@ -31,6 +43,6 @@ void CAnimation::Render(float x, float y)
 
 	}
 
-	frames[currentFrame]->GetSprite()->Draw(x, y);
+	frames[currentFrame]->Draw(x, y);
 }
 

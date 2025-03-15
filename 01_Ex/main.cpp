@@ -17,12 +17,12 @@
 #include <d3d10.h>
 #include <d3dx10.h>
 #include <vector>
+#include <random>
 
 #include "debug.h"
 #include "Game.h"
 #include "GameObject.h"
-#include "Ship.h"
-#include "MyShip.h"
+#include "Tank.h"
 
 #define WINDOW_CLASS_NAME L"Game Window"
 #define MAIN_WINDOW_TITLE L"01 - Skeleton"
@@ -31,8 +31,25 @@
 #define TEXTURE_PATH_BRICK L"brick.png"
 #define TEXTURE_PATH_MARIO L"mario.png"
 
-#define TEXTURE_PATH_MYSHIP L"ship.png"
-#define TEXTURE_PATH_SHIP L"enemy_ship.png"
+#define TEXTURE_PATH_TANK_TOP L"tank/top.png"
+#define TEXTURE_PATH_TANK_BOTTOM L"tank/bottom.png"
+#define TEXTURE_PATH_TANK_LEFT L"tank/left.png"
+#define TEXTURE_PATH_TANK_RIGHT L"tank/right.png"
+
+#define TEXTURE_PATH_ENEMY_GREEN_RIGHT L"enemy/green/right.png"
+#define TEXTURE_PATH_ENEMY_GREEN_LEFT L"enemy/green/left.png"
+#define TEXTURE_PATH_ENEMY_GREEN_TOP L"enemy/green/top.png"
+#define TEXTURE_PATH_ENEMY_GREEN_BOTTOM L"enemy/green/bottom.png"
+
+#define TEXTURE_PATH_ENEMY_WHITE_RIGHT L"enemy/white/right.png"
+#define TEXTURE_PATH_ENEMY_WHITE_LEFT L"enemy/white/left.png"
+#define TEXTURE_PATH_ENEMY_WHITE_TOP L"enemy/white/top.png"
+#define TEXTURE_PATH_ENEMY_WHITE_BOTTOM L"enemy/white/bottom.png"
+
+#define TEXTURE_PATH_ENEMY_RED_RIGHT L"enemy/red/right.png"
+#define TEXTURE_PATH_ENEMY_RED_LEFT L"enemy/red/left.png"
+#define TEXTURE_PATH_ENEMY_RED_TOP L"enemy/red/top.png"
+#define TEXTURE_PATH_ENEMY_RED_BOTTOM L"enemy/red/bottom.png"
 
 #define TEXTURE_PATH_MISC L"misc.png"
 
@@ -43,34 +60,18 @@
 
 using namespace std;
 
-CMario *mario;
-#define MARIO_START_X 10.0f
-#define MARIO_START_Y 100.0f
-#define MARIO_START_VX 0.1f
-#define MARIO_START_VY 0.1f
-
-
-CBrick *brick;
 vector<LPGAMEOBJECT> objects;
-
-#define BRICK_X 10.0f
-#define BRICK_Y 120.0f
-#define BRICK_WIDTH 32.0f
-#define BRICK_HEIGHT 32.0f
-
-LPTEXTURE texMario = NULL;
-LPTEXTURE texBrick = NULL;
-LPTEXTURE texMisc = NULL;
-
-
-CShip* ship;
-CMyShip* myShip;
 
 #define SHIP_START_X SCREEN_WIDTH / 2
 #define SHIP_START_Y SCREEN_HEIGHT - 100
 
-LPTEXTURE texShip = NULL;
-LPTEXTURE texMyShip = NULL;
+
+LPTEXTURE* myTankTex = new LPTEXTURE[4];
+LPTEXTURE* greenEnemyTex = new LPTEXTURE[4];
+LPTEXTURE* whiteEnemyTex = new LPTEXTURE[4];
+LPTEXTURE* redEnemyTex = new LPTEXTURE[4];
+
+CTank* myTank;
 
 // Global key state
 bool keys[256] = { false };
@@ -110,16 +111,49 @@ float getRandomFloat(float min, float max) {
 void LoadResources()
 {
 	CGame * game = CGame::GetInstance();
-	texShip = game->LoadTexture(TEXTURE_PATH_SHIP);
-	texMyShip = game->LoadTexture(TEXTURE_PATH_MYSHIP);
+
+	myTankTex[0] = game->LoadTexture(TEXTURE_PATH_TANK_TOP);
+	myTankTex[1] = game->LoadTexture(TEXTURE_PATH_TANK_BOTTOM);
+	myTankTex[2] = game->LoadTexture(TEXTURE_PATH_TANK_LEFT);
+	myTankTex[3] = game->LoadTexture(TEXTURE_PATH_TANK_RIGHT);
+
+	greenEnemyTex[0] = game->LoadTexture(TEXTURE_PATH_ENEMY_GREEN_TOP);
+	greenEnemyTex[1] = game->LoadTexture(TEXTURE_PATH_ENEMY_GREEN_BOTTOM);
+	greenEnemyTex[2] = game->LoadTexture(TEXTURE_PATH_ENEMY_GREEN_LEFT);
+	greenEnemyTex[3] = game->LoadTexture(TEXTURE_PATH_ENEMY_GREEN_RIGHT);
+
+	whiteEnemyTex[0] = game->LoadTexture(TEXTURE_PATH_ENEMY_WHITE_TOP);
+	whiteEnemyTex[1] = game->LoadTexture(TEXTURE_PATH_ENEMY_WHITE_BOTTOM);
+	whiteEnemyTex[2] = game->LoadTexture(TEXTURE_PATH_ENEMY_WHITE_LEFT);
+	whiteEnemyTex[3] = game->LoadTexture(TEXTURE_PATH_ENEMY_WHITE_RIGHT);
+
+	redEnemyTex[0] = game->LoadTexture(TEXTURE_PATH_ENEMY_RED_TOP);
+	redEnemyTex[1] = game->LoadTexture(TEXTURE_PATH_ENEMY_RED_BOTTOM);
+	redEnemyTex[2] = game->LoadTexture(TEXTURE_PATH_ENEMY_RED_LEFT);
+	redEnemyTex[3] = game->LoadTexture(TEXTURE_PATH_ENEMY_RED_RIGHT);
+
 
 	//mario = new CMario(MARIO_START_X, MARIO_START_Y, MARIO_START_VX, MARIO_START_VY, texMario);
-	myShip = new CMyShip(100, 100 , 0.1f, 0.1f, texMyShip);
-	objects.push_back(myShip);
-	for (int i = 0; i < 3; i++)
+	myTank = new CTank(100, 100 , 0.1f, 0.1f, myTankTex);
+	objects.push_back(myTank);
+	for (int i = 0; i < 8; i++)
 	{
+		int ran = rand() % 3;
+		LPTEXTURE* enemy = NULL;
+		switch (ran)
+		{
+		case 0:
+			enemy = greenEnemyTex;
+			break;
+		case 1:
+			enemy = whiteEnemyTex;
+			break;
+		case 2:
+			enemy = redEnemyTex;
+			break;
+		}
 
-		objects.push_back(new CShip(getRandomFloat(0, SCREEN_WIDTH), texShip->getHeight() / 2, 0.0f, 0.1f, texShip));
+		objects.push_back(new CTank(getRandomFloat(0, SCREEN_WIDTH), getRandomFloat(0, SCREEN_HEIGHT), 0.0f, 0.1f, enemy));
 	}
 
 }
@@ -140,7 +174,6 @@ void Update(DWORD dt)
 		(objects[i])->Update(dt);
 	}
 
-	DebugOutTitle(L"01 - Skeleton %0.1f, %0.1f", myShip->GetX(), myShip->GetY());
 }
 
 /*

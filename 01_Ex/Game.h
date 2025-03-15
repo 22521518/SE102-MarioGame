@@ -55,8 +55,9 @@ public:
 
 	int GetBackBufferWidth() { return backBufferWidth; }
 	int GetBackBufferHeight() { return backBufferHeight; }
-
+	HWND GetWindowHandle() { return hWnd; }
 	static CGame * GetInstance();
+
 
 	~CGame();
 };
